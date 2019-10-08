@@ -3,8 +3,11 @@
   require("functions_main.php");
   require("functions_user.php");
 	$database = "if19_filip_ta_2";
-	$email = null;
 	
+    $notice = "";
+    $email = "";
+    $emailError = "";
+    $passwordError = "";
 	$userName = "Filip Taik";
 	$notice = "";
     $email = "";
@@ -80,32 +83,38 @@
   echo "<p>Lehe avamise hetkel oli aeg: " . $fullTimeNow . ", " . $partOfDay . ".</p>" ; 
   echo $randomImgHTML;
  ?>
-  
   <br>
-   <?php//sisselogimine
-	if(isset($_POST["login"])){
-		if (isset($_POST["email"]) and !empty($_POST["email"])){
-		  $email = test_input($_POST["email"]);
-		} else {
-		  $emailError = "Palun sisesta kasutajatunnusena e-posti aadress!";
-		}
-	  
-		if (!isset($_POST["password"]) or strlen($_POST["password"]) < 8){
-		  $passwordError = "Palun sisesta parool, vähemalt 8 märki!";
-		}
-	  
-		if(empty($emailError) and empty($passwordError)){
-		   $notice = signIn($email, $_POST["password"]);
-		} else {
-			$notice = "Ei saa sisse logida!";
-		}
-	  }
-	?>
-
-   <!--<img src="../Photos/tlu_terra_600x400_1.jpg" alt="TLU Terra õppehoone">-->
- <!-- Pildi kõrvuti panemine!!!!<div class="column">
-	<img src="../Photos/tlu_terra_600x400_2.jpg" alt="TLU Terra õppehoone 2">
-	</div>-->
+  <br>
+   <?php
+  if(isset($_POST["submitUserData"])){
+  if(isset($_POST["username"]) and !empty($_POST["username"])){
+    $email = $_POST["username"];
+  } else {
+    $emailError = "Palun sisestage enda kasutajatunnus!";
+  }
+  if(empty($_POST["password"])){
+    $passwordError = "Palun sisestage parool!";
+  }
+  if(empty($passwordError) and empty($emailError)){
+    $notice = signIn($email, $_POST["password"]);
+    $email = null;
+  }
+}
+?>
+ <form method = "POST" action='<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>'>
+  <label>E-mail(kasutajatunnus): </label><br>
+  <input type="email" name="username" value="<?php echo $email;?>"> <?php echo $emailError;?>
+  <br>
+  <label>Parool: </label><br>
+  <input type="password" name="password"><?php echo $passwordError;?><br>
+  <br>
+  <input type="submit" name="submitUserData" value="Logi sisse"><?php echo $notice;?>
+</form>
+<br>
+<h2>Kui pole kasutajakontot</h2>
+<p>Loo <a href="newuser.php">kasutajakonto</a></p>
+</body>
+</html>
   
 </body>
 </html>
