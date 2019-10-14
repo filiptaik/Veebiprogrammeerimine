@@ -28,6 +28,7 @@
 	<p><?php echo $userName; ?> | Logi <a href="?logout=1">välja!</a></p>
  
   <br>
+  <p>Loo <a href="profiil.php">profiil!</a></p>
    
 
    <!--<img src="../Photos/tlu_terra_600x400_1.jpg" alt="TLU Terra õppehoone">-->

@@ -1,7 +1,7 @@
 <?php
 //võtan kasutusele sessiooni
 	session_start();
-	//var_dump($_SESSION);
+	var_dump($_SESSION);
 
 
 
@@ -48,7 +48,23 @@
 		//annan sessiooni muutujatele väärtused
 			$_SESSION["userFirstname"] = $firstnameFromDb;
 			$_SESSION["userLastname"] = $lastnameFromDb;
-			$_SESSION["userId"] = $idFromDb;
+			$_SESSION["userID"] = $idFromDb;
+
+			  //loeme kasutajaprofiili
+		  $stmt->close();
+		  $stmt = $conn->prepare("SELECT bgcolor, txtcolor FROM vpuserprofiles3 WHERE userid=?");
+		  echo $conn->error;
+		  $stmt->bind_param("i", $_SESSION["userID"]);
+		  $stmt->bind_result($bgColorFromDb, $txtColorFromDb);
+		  $stmt->execute();
+		  if($stmt->fetch()){
+			$_SESSION["bgColor"] = $bgColorFromDb;
+	        $_SESSION["txtColor"] = $txtColorFromDb;
+		  } else {
+		    $_SESSION["bgColor"] = "#FFFFFF";
+	        $_SESSION["txtColor"] = "#000000";
+		  }
+		  
 
 
 			
@@ -78,20 +94,46 @@
   
   
   function storeProfile($mydescription, $mybgcolor, $mytxtcolor){
+  	$notice = "";
 	$conn = new mysqli($GLOBALS["serverHost"], $GLOBALS["serverUsername"], $GLOBALS["serverPassword"], $GLOBALS["database"]);
-	$stmt = $conn->prepare("INSERT INTO vpuserprofiles (description, bgcolor, txtcolor) VALUES(?,?,?)");
+    $stmt = $conn->prepare("SELECT id FROM vpuserprofiles WHERE userid=?");
 	echo $conn->error;
-	$stmt->bind_param("sss", $mydescription, $mybgcolor, $mytxtcolor);
-	if($stmt->execute()){
-		$notice = "Profiili lisamine õnnestus";
+	$stmt->bind_param("i", $_SESSION["userID"]);
+	$stmt->bind_result($idFromDb);
+	$stmt->execute();
+	if($stmt->fetch()){
+		//profiil juba olemas, uuendame
+		$stmt->close();
+		$stmt = $conn->prepare("UPDATE vpuserprofiles SET description = ?, bgcolor = ?, txtcolor = ? WHERE userid = ?");
+		echo $conn->error;
+		$stmt->bind_param("sssi", $description, $mybgcolor, $mytxtcolor, $_SESSION["userID"]);
+		if($stmt->execute()){
+			$notice = "Profiil edukalt uuendatud!";
+			$_SESSION["bgcolor"] = $mybgcolor;
+	        $_SESSION["txtcolor"] = $mytxtcolor;
+		} else {
+			$notice = "Profiili salvestamisel tekkis tõrge! " .$stmt->error;
+		}
+		//$notice = "Profiil olemas, ei salvestanud midagi!";
 	} else {
-			$notice = "Profiili loomisel tekkis tehniline viga: " .$stmt->error;
-	$stmt -> close();
-	$conn -> close();
+		//profiili pole, salvestame
+		$stmt->close();
+		$stmt = $conn->prepare("INSERT INTO vpuserprofiles (userid, description, bgcolor, txtcolor) VALUES(?,?,?,?)");
+		echo $conn->error;
+		$stmt->bind_param("isss", $_SESSION["userID"], $description, $mybgolor, $mytxtcolor);
+		if($stmt->execute()){
+			$notice = "Profiil edukalconnt salvestatud!";
+		} else {
+			$notice = "Profiili salvestamisel tekkis tõrge! " .$stmt->error;
+		}
+	}
+	$stmt->close();
+	$conn->close();
+	return $notice;
+  }
 	
 	  
 	  
 	  
 	  
-	  
-  }//funktsiooni lõpp
+ //funktsiooni lõpp
