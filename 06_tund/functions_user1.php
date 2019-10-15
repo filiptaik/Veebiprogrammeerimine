@@ -1,33 +1,29 @@
 <?php
-//võtan kasutusele sessiooni
-	session_start();
-	var_dump($_SESSION);
-
-
-
-	function signUp($name, $surName, $email, $gender, $birthDate, $password){
+//Võtan kasutusele sessiooni
+session_start();
+//var_dump($_SESSION);
+function signUp($name, $surname, $email, $gender, $birthDate, $password){
 	$notice = null;
 	$conn = new mysqli($GLOBALS["serverHost"], $GLOBALS["serverUsername"], $GLOBALS["serverPassword"], $GLOBALS["database"]);
 	$stmt = $conn->prepare("INSERT INTO vpusers (firstname, lastname, birthdate, gender, email, password) VALUES(?,?,?,?,?,?)");
 	echo $conn->error;
 	$options = ["cost" => 12, "salt" => substr(sha1(rand()), 0, 22)];
 	$pwdhash = password_hash($password, PASSWORD_BCRYPT, $options);
-	$stmt->bind_param("sssiss", $name, $surName, $birthDate, $gender, $email, $pwdhash);
+	$stmt->bind_param("sssiss", $name, $surname, $birthDate, $gender, $email, $pwdhash);
 	if($stmt->execute()){
-		$notice = "Kasutaja loomine õnnestus";
+		$notice = "Kasutaja loomine õnnestus!";
 	} else {
-			$notice = "Kasutaja loomisel tekkis tehniline viga: " .$stmt->error;
+		$notice = "Kasutaja loomisel tekkis tehniline viga: " .$stmt->error;
 	}
-	
 	$stmt -> close();
 	$conn -> close();
 	return $notice;
 }
- function signIn($email, $password){
+  function signIn($email, $password){
 	$notice = "";
-	$mysqli = new mysqli($GLOBALS["serverHost"], $GLOBALS["serverUsername"], $GLOBALS["serverPassword"], $GLOBALS["database"]);
-	$stmt = $mysqli->prepare("SELECT password FROM vpusers WHERE email=?");
-	echo $mysqli->error;
+	$conn = new mysqli($GLOBALS["serverHost"], $GLOBALS["serverUsername"], $GLOBALS["serverPassword"], $GLOBALS["database"]);
+	$stmt = $conn->prepare("SELECT password FROM vpusers WHERE email=?");
+	echo $conn->error;
 	$stmt->bind_param("s", $email);
 	$stmt->bind_result($passwordFromDb);
 	if($stmt->execute()){
@@ -37,24 +33,24 @@
 		if(password_verify($password, $passwordFromDb)){
 		  //kui salasõna klapib
 		  $stmt->close();
-		  $stmt = $mysqli->prepare("SELECT id, firstname, lastname FROM vpusers WHERE email=?");
-		  echo $mysqli->error;
+		  $stmt = $conn->prepare("SELECT id, firstname, lastname FROM vpusers1 WHERE email=?");
+		  echo $conn->error;
 		  $stmt->bind_param("s", $email);
 		  $stmt->bind_result($idFromDb, $firstnameFromDb, $lastnameFromDb);
 		  $stmt->execute();
 		  $stmt->fetch();
 		  $notice = "Sisse logis " .$firstnameFromDb ." " .$lastnameFromDb ."!";
-		  	
-		//annan sessiooni muutujatele väärtused
-			$_SESSION["userFirstname"] = $firstnameFromDb;
-			$_SESSION["userLastname"] = $lastnameFromDb;
-			$_SESSION["userID"] = $idFromDb;
-
-			  //loeme kasutajaprofiili
+		  
+		  //annan sessioonimuutujatele väärtused
+		  $_SESSION["userId"] = $idFromDb;
+		  $_SESSION["userFirstname"] = $firstnameFromDb;
+		  $_SESSION["userLastname"] = $lastnameFromDb;
+		  
+		  //loeme kasutajaprofiili
 		  $stmt->close();
-		  $stmt = $mysqli->prepare("SELECT bgcolor, txtcolor FROM vpuserprofiles WHERE userid=?");
-		  echo $mysqli->error;
-		  $stmt->bind_param("i", $_SESSION["userID"]);
+		  $stmt = $conn->prepare("SELECT bgcolor, txtcolor FROM vpuserprofiles1 WHERE userid=?");
+		  echo $conn->error;
+		  $stmt->bind_param("i", $_SESSION["userId"]);
 		  $stmt->bind_result($bgColorFromDb, $txtColorFromDb);
 		  $stmt->execute();
 		  if($stmt->fetch()){
@@ -65,18 +61,14 @@
 	        $_SESSION["txtColor"] = "#000000";
 		  }
 		  
-
-
-			
-		//kuna siirdume teisele lehele, sulgeme andmebaasi ühendused
-			$stmt->close();
-			$mysqli->close();	  
-		//siirdume teisele lehele
-			header("Location: home.php");
-		//katkestame edasise tegevuse siin	
-			exit();
-		
-		
+		  //kuna siirdume teisele lehele, sulgeme andmebaasi ühendused
+		  $stmt->close();
+	      $conn->close();
+		  //siirdume teisele lehele
+		  header("Location: home.php");
+		  //katkestame edasise tegevuse siin
+		  exit();
+		  		  
 		} else {
 		  $notice = "Vale salasõna!";
 		}
@@ -88,41 +80,30 @@
 	}
 	
 	$stmt->close();
-	$mysqli->close();
+	$conn->close();
 	return $notice;
   }//sisselogimine lõppeb
   
-  
-  function storeProfile($mydescription, $mybgcolor, $mytxtcolor){
-  	$notice = "";
+    //kasutajaprofiili salvestamine
+  function storeuserprofile($description, $bgColor, $txtColor){
+	$notice = "";
 	$conn = new mysqli($GLOBALS["serverHost"], $GLOBALS["serverUsername"], $GLOBALS["serverPassword"], $GLOBALS["database"]);
     $stmt = $conn->prepare("SELECT id FROM vpuserprofiles WHERE userid=?");
 	echo $conn->error;
-	$stmt->bind_param("i", $_SESSION["userID"]);
+	$stmt->bind_param("i", $_SESSION["userId"]);
 	$stmt->bind_result($idFromDb);
 	$stmt->execute();
 	if($stmt->fetch()){
 		//profiil juba olemas, uuendame
-		$stmt->close();
-		$stmt = $conn->prepare("UPDATE vpuserprofiles SET description = ?, bgcolor = ?, txtcolor = ? WHERE userid = ?");
-		echo $conn->error;
-		$stmt->bind_param("sssi", $description, $mybgcolor, $mytxtcolor, $_SESSION["userID"]);
-		if($stmt->execute()){
-			$notice = "Profiil edukalt uuendatud!";
-			$_SESSION["bgcolor"] = $mybgcolor;
-	        $_SESSION["txtcolor"] = $mytxtcolor;
-		} else {
-			$notice = "Profiili salvestamisel tekkis tõrge! " .$stmt->error;
-		}
-		//$notice = "Profiil olemas, ei salvestanud midagi!";
+		$notice = "Profiil olemas, ei salvestanud midagi!";
 	} else {
 		//profiili pole, salvestame
 		$stmt->close();
 		$stmt = $conn->prepare("INSERT INTO vpuserprofiles (userid, description, bgcolor, txtcolor) VALUES(?,?,?,?)");
 		echo $conn->error;
-		$stmt->bind_param("isss", $_SESSION["userID"], $description, $mybgolor, $mytxtcolor);
+		$stmt->bind_param("isss", $_SESSION["userId"], $description, $bgColor, $txtColor);
 		if($stmt->execute()){
-			$notice = "Profiil edukalconnt salvestatud!";
+			$notice = "Profiil edukalt salvestatud!";
 		} else {
 			$notice = "Profiili salvestamisel tekkis tõrge! " .$stmt->error;
 		}
@@ -131,9 +112,19 @@
 	$conn->close();
 	return $notice;
   }
-	
-	  
-	  
-	  
-	  
- //funktsiooni lõpp
+  
+  function showMyDesc(){
+	$notice = null;
+	$conn = new mysqli($GLOBALS["serverHost"], $GLOBALS["serverUsername"], $GLOBALS["serverPassword"], $GLOBALS["database"]);
+	$stmt = $conn->prepare("SELECT description FROM vpuserprofiles WHERE userid=?");
+	echo $conn->error;
+	$stmt->bind_param("i", $_SESSION["userId"]);
+	$stmt->bind_result($descriptionFromDb);
+	$stmt->execute();
+    if($stmt->fetch()){
+	  $notice = $descriptionFromDb;
+	}
+	$stmt->close();
+	$conn->close();
+	return $notice;
+  }

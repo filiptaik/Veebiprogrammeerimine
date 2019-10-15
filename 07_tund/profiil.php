@@ -1,6 +1,5 @@
 <?php
-  require("../../../config_vp2019.php");
-  require("functions_user.php");
+ require("functions_user.php");
 	$database = "if19_filip_ta_2";
 	$mydescription = null;
 	$mytxtcolor = "#000000";
@@ -32,29 +31,23 @@
 		if(!empty($_POST["description"])){
 	  	$myDescription = $_POST["description"];
 		}
-		$_SESSION["txtColor"] = $_POST["txtcolor"];
- 			// } else {
-			//	$myProfileDesc = showMyDesc();
-					//if(!empty($myProfileDesc)){
-	  				//	$myDescription = $myProfileDesc;
-//    }
+		$_SESSION["mytxtcolor"] = $_POST["txtcolor"];
+ 			 } else {
+				$myProfileDesc = showMyDesc();
+					if(!empty($myProfileDesc)){
+	  					$myDescription = $myProfileDesc;
+    }
   
 	
 		
 		
 }// nupp vajutatud
 
-
+require ("header.php")
 
 ?>
 
-<!DOCTYPE html>
-<html lang="et">
-  <head>
-  <meta charset="utf-8">			
-  <title>Lisa profiil</title>
 
-</head>
 <body>
   <p>see veebileht on loodud õppetöö käigus ega sisalda mingit adekvaatset sisu</p>
   <hr>

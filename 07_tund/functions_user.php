@@ -1,7 +1,10 @@
 <?php
 //võtan kasutusele sessiooni
+	require("../../../config_vp2019.php");
+	$database = "if19_filip_ta_2";
+	
 	session_start();
-	var_dump($_SESSION);
+	//var_dump($_SESSION);
 
 
 
@@ -94,7 +97,7 @@
   
   
   function storeProfile($mydescription, $mybgcolor, $mytxtcolor){
-  	$notice = "";
+  	$notice = null;
 	$conn = new mysqli($GLOBALS["serverHost"], $GLOBALS["serverUsername"], $GLOBALS["serverPassword"], $GLOBALS["database"]);
     $stmt = $conn->prepare("SELECT id FROM vpuserprofiles WHERE userid=?");
 	echo $conn->error;
@@ -104,17 +107,16 @@
 	if($stmt->fetch()){
 		//profiil juba olemas, uuendame
 		$stmt->close();
-		$stmt = $conn->prepare("UPDATE vpuserprofiles SET description = ?, bgcolor = ?, txtcolor = ? WHERE userid = ?");
+		$stmt = $conn->prepare("UPDATE vpuserprofiles SET description = ?, bgcolor = ?, txtcolor = ? WHERE userid= ?");
 		echo $conn->error;
-		$stmt->bind_param("sssi", $description, $mybgcolor, $mytxtcolor, $_SESSION["userID"]);
+		$stmt->bind_param("sssi", $mydescription, $mybgcolor, $mytxtcolor, $_SESSION["userID"]);
 		if($stmt->execute()){
-			$notice = "Profiil edukalt uuendatud!";
-			$_SESSION["bgcolor"] = $mybgcolor;
-	        $_SESSION["txtcolor"] = $mytxtcolor;
+			$notice = "Profiil uuendatud";
+			$_SESSION["bgColor"] = $mybgcolor;
+	        $_SESSION["txtColor"] = $mytxtcolor;
 		} else {
-			$notice = "Profiili salvestamisel tekkis tõrge! " .$stmt->error;
+			$notice = "Profiili uuendamisel tekkis tõrge! ";
 		}
-		//$notice = "Profiil olemas, ei salvestanud midagi!";
 	} else {
 		//profiili pole, salvestame
 		$stmt->close();
@@ -122,10 +124,26 @@
 		echo $conn->error;
 		$stmt->bind_param("isss", $_SESSION["userID"], $description, $mybgolor, $mytxtcolor);
 		if($stmt->execute()){
-			$notice = "Profiil edukalconnt salvestatud!";
+			$notice = "Profiil edukalt salvestatud!";
 		} else {
 			$notice = "Profiili salvestamisel tekkis tõrge! " .$stmt->error;
 		}
+	}
+	$stmt->close();
+	$conn->close();
+	return $notice;
+  }
+  
+   function showMyDesc(){
+	$notice = null;
+	$conn = new mysqli($GLOBALS["serverHost"], $GLOBALS["serverUsername"], $GLOBALS["serverPassword"], $GLOBALS["database"]);
+	$stmt = $conn->prepare("SELECT description FROM vpuserprofiles WHERE userid=?");
+	echo $conn->error;
+	$stmt->bind_param("i", $_SESSION["userId"]);
+	$stmt->bind_result($descriptionFromDb);
+	$stmt->execute();
+    if($stmt->fetch()){
+	  $notice = $descriptionFromDb;
 	}
 	$stmt->close();
 	$conn->close();
